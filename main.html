@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/d3-polygon.v1.min.js"></script>
+    <style>
+        svg {
+            border: solid 1px gray;
+            position: relative;
+        }
+        .country {
+            fill: gray;
+            stroke: black;
+            stroke-width: .5;
+            position: relative;
+            z-index: 10;
+            opacity: 10%;
+        }
+        .dot circle{
+            fill: red;
+            stroke: red;
+            position: relative;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+<script>
+    const width = 960;
+    const height = 500;
+    const FILE = "world-lowres.geojson";
+
+    const svg = d3.select("body").append("svg")
+            .attr("width", width).attr("height", height);
+
+    // choose a projection
+    const projection = d3.geoMercator();
+    const pixels = projection([100,-50]);
+
+    // create a path generator function for the projection
+    const geoPath = d3.geoPath()
+            .projection(projection);
+
+    const map = {};
+
+    const country_dots = {}
+
+    const cities_coords = {}
+    
+    // let dots = [ [68.6898,35.70554],[69.47215, 34.27386],[68.35514, 34.90765] ]
+
+    // let dots = []
+
+    data = d3.csv("cities.csv").then(data => {
+        data.forEach(d => {
+            d.abbreviation = d.iso3;
+            d.coordinates = [parseFloat(d.lng),parseFloat(d.lat)];
+            if (cities_coords.hasOwnProperty(d.abbreviation)) {
+                cities_coords[d.abbreviation].push(d.coordinates)
+            }
+            else {
+                cities_coords[d.abbreviation] = [d.coordinates]
+            }
+        });
+    });
+
+    console.log(cities_coords)
+
+    data = d3.csv("emission_total.csv").then(data => {
+        data.forEach(d => {
+            d.Country = d.Country;
+            d.Emissions = + parseInt(d.Total / 1000000000);
+            country_dots[String(d.Country)] = d.Emissions
+        });
+    });
+
+    console.log(country_dots)
+
+    // d3.json(FILE)
+    //         .then(function(shapes) {
+    //             map.features = shapes.features;
+    //             map.features.forEach(function(d) { 
+    //                     if (country_dots.hasOwnProperty(d.properties.name)){
+    //                         dots = country_dots[d.properties.name]
+    //                         current_list = []
+    //                         // console.log(typeof(d.id))
+    //                         console.log(cities_coords[d.id])
+    //                         if (cities_coords[d.id] !== undefined) {
+    //                             current_list = cities_coords[d.id]
+    //                             }
+    //                         // else {
+    //                         //     console.log("Failure")
+    //                         //     console.log(d.properties.name)
+    //                         // }
+    //                         // all_coords = cities_coords[d.id]
+    //                         // console.log(all_coords)
+                            
+                            
+
+    //                         svg.selectAll("g.dot").data(current_list).enter()
+    //                             // console.log(dots)
+    //                             .append("g").attr("class","dot")
+    //                             // .attr("transform", d => `translate(${[geoPath.projection()(d.geometry.coordinates)]})`)
+    //                             .attr("transform", d => `translate(${[geoPath.projection()(d)]})`)
+    //                             .each(function(d) {
+    //                                 d3.select(this).append("circle").attr('r', 1);
+    //                                 console.log("making circle")
+    //                                 // d3.select(this).append("text").attr('y', 2).text(d.properties.name);
+    //                                 // d3.select(this).append("text").attr('y', 2).text("Hello");
+    //                             });
+
+
+    //                     }
+    //                 // }
+    //             });
+    //             draw();
+    //         });
+
+
+    d3.json(FILE)
+            .then(function(shapes) {
+                // console.log(shapes); // GeoJSON data
+                map.features = shapes.features;
+                // test = [[1,2],[-1,3],[-2,-4]]
+                // let minimums = d3.min(test)
+                // let maximums = d3.max(test)
+                // let solution = getMinMax(test)
+                // console.log(minimums)
+                // console.log(maximums)
+                // console.log(test)
+                // console.log(solution)
+                // console.log(map.features)
+                // map.features.forEach(function(d) { console.log(d.geometry.type)});
+                let dots = []
+                map.features.forEach(function(d) { 
+                    // if (d.properties.name == "France"){
+                        if (country_dots.hasOwnProperty(d.properties.name) && d.geometry.type == "Polygon"){
+                            // console.log(d.geometry.coordinates)
+                            // console.log(d.properties.name)
+                            // Something is messed up here
+                            count = 0
+                            current_list = []
+                            // let minimums = d3.min(d.geometry.coordinates[0])
+                            // let maximums = d3.max(d.geometry.coordinates[0])
+                            let minmax = getMinMax(d.geometry.coordinates[0])
+                            let min_x = minmax[0][0]
+                            let max_x = minmax[0][1]
+                            let min_y = minmax[1][0]
+                            let max_y = minmax[1][1]
+                            // console.log(minmax)
+                            while (count < country_dots[d.properties.name]) {
+                                // let x = Number.random(min_x, max_x, 5);
+                                // let y = Number.random(min_y, max_y, 5);
+                                let x = Number.random(min_x, max_x, 5);
+                                let y = Number.random(min_y, max_y, 5);
+                                let coords = [Number(x),Number(y)]
+                                // console.log(coords)
+                                if (d3.polygonContains(d.geometry.coordinates[0],coords)){
+                                    current_list.push(coords)
+                                    dots.push(coords)
+                                    count = count + 1
+                                    // console.log("match")
+                                }
+                                // console.log(d3.polygonContains(d.geometry.coordinates[0],[63.2,35.9]))
+                                
+                                // console.log(min_x)
+                                // console.log(max_x)
+                                // console.log(min_y)
+                                // console.log(max_y)                   
+                                // console.log(d3.polygonArea(d.geometry.coordinates[0]))
+                                // console.log(d.geometry.coordinates)
+                            }
+                            // dots.push(current_list)
+                            // console.log(current_list.length)
+
+                            // svg.selectAll("g.dot").data(current_list).enter()
+                            //     // console.log(dots)
+                            //     .append("g").attr("class","dot")
+                            //     // .attr("transform", d => `translate(${[geoPath.projection()(d.geometry.coordinates)]})`)
+                            //     .attr("transform", d => `translate(${[geoPath.projection()(d)]})`)
+                            //     .each(function(d) {
+                            //         d3.select(this).append("circle").attr('r', 0.5);
+                            //         console.log("making circle")
+                            //         // d3.select(this).append("text").attr('y', 2).text(d.properties.name);
+                            //         // d3.select(this).append("text").attr('y', 2).text("Hello");
+                            //     });
+
+
+                        }
+                    // }
+                    // makeDot(current_list)
+                });
+                makeDot(dots);
+                draw();
+            });
+            
+            // console.log(dots.length)
+            // console.log(dots[0])
+
+            // svg.selectAll("g.dot").data(dots).enter()
+            //                     // console.log(dots)
+            //                     .append("g").attr("class","dot")
+            //                     // .attr("transform", d => `translate(${[geoPath.projection()(d.geometry.coordinates)]})`)
+            //                     .attr("transform", d => `translate(${[geoPath.projection()(d)]})`)
+            //                     .each(function(d) {
+            //                         d3.select(this).append("circle").attr('r', 0.5);
+            //                         console.log("making circle")
+            //                         // d3.select(this).append("text").attr('y', 2).text(d.properties.name);
+            //                         // d3.select(this).append("text").attr('y', 2).text("Hello");
+            //                     });
+
+
+    Number.random = function(minimum, maximum, precision) {
+        var random = Math.random() * (maximum - minimum) + minimum;
+        return random.toFixed(precision);
+    }
+
+    getMinMax = function(coordinates) {
+        var xmin = 90
+        var xmax = -90
+        var ymin = 180
+        var ymax = -180
+        for (let i = 0; i < coordinates.length; i++){
+            var currentx = coordinates[i][0]
+            var currenty = coordinates[i][1]
+            if (currentx < xmin) {
+                xmin = currentx
+            }
+            if (currentx > xmax) {
+                xmax = currentx
+            }
+            if (currenty < ymin) {
+                ymin = currenty
+            }
+            if (currenty > ymax) {
+                ymax = currenty
+            }
+        }
+        return [[xmin,xmax],[ymin,ymax]]
+    }
+
+    function draw() {
+        svg.selectAll("path.country")
+            .data(map.features)
+            .enter()
+            .append("path")
+            .attr("class","country")
+            // .attr("class",map.features.id)
+            .attr('d', geoPath)
+    }
+
+    function makeDot(dots) {
+        svg.selectAll("g.dot").data(dots).enter()
+            // console.log(dots)
+            .append("g").attr("class","dot")
+            // .attr("transform", d => `translate(${[geoPath.projection()(d.geometry.coordinates)]})`)
+            .attr("transform", d => `translate(${[geoPath.projection()(d)]})`)
+            .each(function(d) {
+                d3.select(this).append("circle").attr('r', 0.5);
+                console.log("making circle")
+                // d3.select(this).append("text").attr('y', 2).text(d.properties.name);
+                // d3.select(this).append("text").attr('y', 2).text("Hello");
+            });
+    }
+
+    // console.log(dots)
+
+    // svg.selectAll("g.dot").data(dots).enter()
+    //         // console.log(dots)
+    //         .append("g").attr("class","dot")
+    //         // .attr("transform", d => `translate(${[geoPath.projection()(d.geometry.coordinates)]})`)
+    //         .attr("transform", d => {
+    //             console.log("here")
+    //             `translate(${[geoPath.projection()(d)]})`
+    //     })
+            
+    //         .each(function(d) {
+    //             d3.select(this).append("circle").attr('r', 1);
+    //             console.log("making circle")
+    //             // d3.select(this).append("text").attr('y', 2).text(d.properties.name);
+    //             // d3.select(this).append("text").attr('y', 2).text("Hello");
+    //         });
+
+</script>
+</body>
+</html>
